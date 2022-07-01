@@ -14,13 +14,11 @@
                 uploaded: 0,
                 percentage: 0,
                 ishover: false,
+                taskID: null,
             };
         },
 
         computed: {
-            progress() {
-                return Math.floor((this.uploaded * 100) / this.file.size);
-            },
             formData() {
                 let formData = new FormData;
                 formData.set('file', this.chunks[0], `${this.fileID}.ext.part-${this.pad(this.chunks.indexOf(this.chunks[0]))}`);
@@ -40,7 +38,6 @@
                     onUploadProgress: event => {
                         this.uploaded += event.loaded;
                         this.percentage = Math.floor((this.uploaded / this.file.size) * 100)
-                        console.log(this.percentage)
                     }
                 };
             }
@@ -75,11 +72,12 @@
             	return Math.floor(Math.random() * Date.now())
             },
             upload() {
-            	// this.$router.push('progress')
                 axios(this.config).then(response => {
+                	this.chunks.shift();
                 	if (this.chunks.length > 0) {
-                		this.chunks.shift();
                     	this.upload()
+                	} else {
+                		this.taskID = response.data.taskID
                 	}
                 }).catch(error => {});
             },
@@ -114,12 +112,14 @@
 		                    <input @change="select" type="file" id="fileupload" placeholder="Select file">
 		                </div>    
 		            </form>
-		            <!-- <progress :value="progress"></progress> -->
 		        </div>
 		    </div>
 		</div>
-		<div v-else>
+		<div v-else-if="file && !taskID">
 			<ProgressBar :filename="file.name" :percentage="percentage"/>
+		</div>
+		<div v-else>
+			<TaskStatus :taskID="taskID" :filename="file.name"/>
 		</div>
 	</div>
 </template>

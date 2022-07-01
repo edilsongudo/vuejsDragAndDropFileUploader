@@ -28,12 +28,12 @@
 </template>
 
 <style scoped>
+	@import url('https://fonts.googleapis.com/css?family=Montserrat&display=swap');
+
 	:root {
 	  --buttonbg1: rgba(244, 88, 102, 1);
 	  --buttonbg2: rgba(244, 88, 102, 1);
 	}
-
-	@import url('https://fonts.googleapis.com/css?family=Montserrat&display=swap');
 
 	* {
 		box-sizing: border-box;
