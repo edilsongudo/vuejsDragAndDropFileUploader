@@ -20,7 +20,6 @@
                 file: null,
                 fileID: null,
                 chunks: [],
-                uploaded: 0,
                 percentage: 0,
                 ishover: false,
                 taskID: null,
@@ -86,8 +85,9 @@
                         'Content-Type': 'application/octet-stream'
                     },
                     onUploadProgress: event => {
-                        this.uploaded += event.loaded;
-                        this.percentage = Math.floor((this.uploaded / this.file.size) * 100)
+                		const totalLength = event.lengthComputable ? event.total : event.target.getResponseHeader('content-length') || event.target.getResponseHeader('x-decompressed-content-length');
+                        console.log(Math.round( (event.loaded * 100) / totalLength ))
+                        this.percentage = Math.round( (event.loaded * 100) / totalLength )
                     }
                 };
             }
