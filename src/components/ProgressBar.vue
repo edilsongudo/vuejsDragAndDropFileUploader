@@ -31,8 +31,8 @@
 	@import url('https://fonts.googleapis.com/css?family=Montserrat&display=swap');
 
 	:root {
-	  --buttonbg1: rgba(244, 88, 102, 1);
-	  --buttonbg2: rgba(244, 88, 102, 1);
+	  --buttonbg1: rgba(255, 128, 128, 1);
+	  --buttonbg2: rgba(255, 128, 128, 1);
 	}
 
 	* {
@@ -58,8 +58,8 @@
 	}
 
 	.progress-done {
-		background: linear-gradient(to left, rgba(244, 88, 102, 1), rgba(244, 88, 102, 1));
-		box-shadow: 0 3px 3px -5px rgba(244, 88, 102, 1), 0 2px 5px rgba(244, 88, 102, 1);
+		background: linear-gradient(to left, rgba(255, 128, 128, 1), rgba(255, 128, 128, 1));
+		box-shadow: 0 3px 3px -5px rgba(255, 128, 128, 1), 0 2px 5px rgba(255, 128, 128, 1);
 		border-radius: 20px;
 		color: #fff;
 		display: flex;

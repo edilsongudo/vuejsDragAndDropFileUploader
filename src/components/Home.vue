@@ -1,10 +1,19 @@
 <script>
 	import { useRouter, useRoute } from 'vue-router'
+	import swal from 'sweetalert';
 
     export default {
 	  	setup() {
 		    const router = useRouter()
 		    const route = useRoute()
+
+		    let events = ['drop', 'dragover']
+			events.forEach(function(event) {
+			  window.addEventListener(event, (e)=> {
+			  	e.preventDefault()
+			  });
+			});
+
 	    },
         data() {
             return {
@@ -15,6 +24,46 @@
                 percentage: 0,
                 ishover: false,
                 taskID: null,
+                awsS3PressignedURL: null,
+                allowedExtensions: [
+					'.mp3',
+					'.mp4', 
+					'.3ga',
+					'.aac', 
+					'.ac3', 
+					'.aif', 
+					'.aiff', 
+					'.alac', 
+					'.amr', 
+					'.ape', 
+					'.au', 
+					'.dss', 
+					'.flac', 
+					'.flv', 
+					'.m4a', 
+					'.m4b', 
+					'.m4p', 
+					'.mp3', 
+					'.mpga', 
+					'.ogg', 
+					'.oga', 
+					'.mogg', 
+					'.opus', 
+					'.qcp', 
+					'.tta', 
+					'.voc', 
+					'.wav', 
+					'.wma', 
+					'.wv',
+					'.webm',
+					'.MTS',
+					'.M2TS',
+					'.TS',
+					'.mov',
+					'.m4p',
+					'.m4v',
+					'.mxf'
+			    ]
             };
         },
 
@@ -29,9 +78,10 @@
             },
             config() {
                 return {
-                    method: 'POST',
-                    data: this.formData,
-                    url: 'http://127.0.0.1:8000/fileUploader/',
+                    method: 'PUT',
+                    // data: this.formData,
+                    data: this.file,
+                    url: this.awsS3PressignedURL,
                     headers: {
                         'Content-Type': 'application/octet-stream'
                     },
@@ -50,12 +100,33 @@
                 let ans = pad.substring(0, pad.length - str.length) + str
                 return ans
             },
+            generateUniqueID() {
+            	return Math.floor(Math.random() * Date.now()) + '.' + this.file.name.split('.').pop()
+            },
+            isAllowExtension(filename) {
+            	const fileExtension = '.' + filename.split('.').pop()
+            	if (!this.allowedExtensions.includes(fileExtension)) {
+            		swal('File type not supported.')
+            		return false
+            	}
+            	return true
+            },
             ondrop(e) {
             	e.dataTransfer.effectAllowed = 'move'
             	this.ishover = false
-            	this.file = e.dataTransfer.files.item(0)
-                this.createChunks();
-                this.upload()
+            	if (e.dataTransfer.files.length > 1) {
+            		swal('Please drop only one file')
+            		return;
+            	}
+            	if (this.isAllowExtension(e.dataTransfer.files.item(0).name)) {
+	            	this.file = e.dataTransfer.files.item(0)
+					this.fileID = this.generateUniqueID()
+		            axios(`https://audiototextonline.herokuapp.com/api/v1/s3-pressigned-url/${this.fileID}/`).then(response => {
+		            	this.awsS3PressignedURL = response.data.url
+		            	this.createChunks();
+	                	this.upload()
+		            })
+            	}
             },
             ondragover(e) {
             	this.ishover = true
@@ -64,21 +135,30 @@
             	this.ishover = false
             },
             select(event) {
-                this.file = event.target.files.item(0);
-                this.createChunks();
-                this.upload()
+            	if (this.isAllowExtension(event.target.files.item(0).name)) {
+	                this.file = event.target.files.item(0);
+		            this.fileID = this.generateUniqueID()
+		            axios(`https://audiototextonline.herokuapp.com/api/v1/s3-pressigned-url/${this.fileID}/`).then(response => {
+		            	this.awsS3PressignedURL = response.data.url
+		            	this.createChunks();
+	                	this.upload()
+		            })
+            	}
             },
-            generateUniqueID() {
-            	return Math.floor(Math.random() * Date.now())
+            start_task() {
+				axios(`https://audiototextonline.herokuapp.com/api/v1/task-start/${this.fileID}/${this.file.name}/`).then(response => {
+					this.taskID = response.data.taskID
+				})
             },
             upload() {
                 axios(this.config).then(response => {
-                	this.chunks.shift();
-                	if (this.chunks.length > 0) {
-                    	this.upload()
-                	} else {
-                		this.taskID = response.data.taskID
-                	}
+                	this.start_task()
+                	// this.chunks.shift();
+                	// if (this.chunks.length > 0) {
+                 //    	this.upload()
+                	// } else {
+                	// 	this.taskID = response.data.taskID
+                	// }
                 }).catch(error => {});
             },
             createChunks() {
@@ -89,10 +169,11 @@
                         i * size, Math.min(i * size + size, this.file.size), this.file.type
                     );
                     this.chunks.push(chunk)
-                    this.fileID = this.generateUniqueID()
                 }
             }
-        }
+        },
+		mounted() {
+		},
     }
 </script>
 
@@ -126,7 +207,7 @@
 
 <style scoped>
 	:root {
-	    --primary-color: rgba(244, 88, 102, 1);
+	    --primary-color: rgba(255, 128, 128, 1);
 	}
 
 	@font-face {
@@ -179,23 +260,24 @@
 	    display: flex;
 	    justify-content: center;
 	    align-items: center;
-	    background: rgba(244, 88, 102, 0.15);
+	    /*background: rgba(255, 128, 128, 0.15);*/
 	    padding: 10px;
 	}
 
 	.drop-box {
 	    width: 100%;
-	    border: 2px dashed rgba(244, 88, 102, 1); 
+	    border: 2px dashed rgba(255, 128, 128, 1); 
 	    display: flex; 
 	    flex-direction: column; 
 	    justify-content: center; 
 	    align-items: center;
 	    text-align: center;
-	    background: rgba(244, 88, 102, 0.2);
+	    transition: 0.25s ease-in;
+	    /*background: rgba(255, 128, 128, 0.2);*/
 	}
 
 	.drop-box.hover {
-	    background: rgba(244, 88, 102, 0.3)
+	    background: rgba(255, 128, 128, 0.3)
 	}
 
 	@media only screen and (max-width: 800px) {
@@ -207,12 +289,12 @@
 	.drop-box p {
 	    text-align: center; 
 	    vertical-align: middle; 
-	    color: rgba(244, 88, 102, 1);
+	    color: rgba(255, 128, 128, 1);
 	}
 
 	.drop-box p i {
 	    font-size: max(5rem, 10vw);
-	    color: rgba(244, 88, 102, 1);
+	    color: rgba(255, 128, 128, 1);
 	}
 
 	input[type="file"] {
@@ -224,9 +306,9 @@
 	    border-radius: 6px;
 	    padding: 10px 50px;
 	    color: white;
-	    background: rgba(244, 88, 102, 1);
+	    background: rgba(255, 128, 128, 1);
 	    border-width: 1px;
-	    border: 2px solid rgba(244, 88, 102, 1);
+	    border: 2px solid rgba(255, 128, 128, 1);
 	    cursor: pointer;
 	    transition: .5s;
 	    font-size: 1rem;
@@ -234,7 +316,7 @@
 	}
 
 	label.custom-file-upload:hover {
-	    color: rgba(244, 88, 102, 1);
+	    color: rgba(255, 128, 128, 1);
 	    background: transparent;
 	}
 </style>
